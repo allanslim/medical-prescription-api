@@ -18,6 +18,7 @@ import java.util.Properties;
 
 @Configuration
 public class JpaPersistenceConfig {
+
 	@Autowired
 	private Environment env;
 

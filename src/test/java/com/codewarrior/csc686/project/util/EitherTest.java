@@ -1,5 +1,6 @@
 package com.codewarrior.csc686.project.util;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Random;
@@ -7,6 +8,7 @@ import java.util.Random;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
+@Ignore
 public class EitherTest {
 
 

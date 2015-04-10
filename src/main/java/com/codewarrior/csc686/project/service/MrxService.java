@@ -28,4 +28,25 @@ public class MrxService {
         return Optional.empty();
     }
 
+    public Optional<String> retrieveUserToken(String token) {
+
+        List<MrxUser> users = mrxUserRepository.findByToken(token);
+
+        if(!users.isEmpty()) {
+            return Optional.of(users.get(0).token);
+        }
+
+        return Optional.empty();
+    }
+
+    public void confirmUser(String token) {
+        List<MrxUser> users = mrxUserRepository.findByToken(token);
+
+        if(!users.isEmpty()) {
+            MrxUser mrxUser = users.get(0);
+            mrxUser.isValid = true;
+            mrxUserRepository.save(mrxUser);
+        }
+
+    }
 }

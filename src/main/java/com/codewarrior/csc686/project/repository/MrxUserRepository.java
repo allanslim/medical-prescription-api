@@ -10,4 +10,6 @@ import java.util.List;
 public interface MrxUserRepository extends CrudRepository<MrxUser, Long> {
 
     List<MrxUser> findByEmail(String email);
+
+    List<MrxUser> findByToken(String token);
 }
