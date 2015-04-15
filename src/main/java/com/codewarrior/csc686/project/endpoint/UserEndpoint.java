@@ -6,6 +6,7 @@ import com.codewarrior.csc686.project.service.FreemarkerEmailModel;
 import com.codewarrior.csc686.project.service.Mailer;
 import com.codewarrior.csc686.project.service.RegisterUserService;
 import com.codewarrior.csc686.project.service.UserService;
+import org.apache.catalina.connector.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,31 @@ public class UserEndpoint {
 
         return response;
     }
+
+    @RequestMapping( method = RequestMethod.POST, value = "/validateMember")
+    public Map<String, String> isMemberValid(@RequestBody RegisterUserInput registerUserInput) throws SQLException, ParseException {
+
+        boolean isMemberValid = registerUserService.isMemberValid(registerUserInput);
+
+        Map<String,String> response = new HashMap<>();
+
+        response.put("isMemberValid", String.valueOf(isMemberValid));
+
+        return response;
+    }
+
+    @RequestMapping( method = RequestMethod.POST, value = "isEmailAvailable")
+    public Map<String, String> isEmailAvailable( @RequestBody  RegisterUserInput registerUserInput) throws SQLException, ParseException {
+
+        boolean isEmailAvailable = registerUserService.isEmailAvailable(registerUserInput.email);
+
+        Map<String,String> response = new HashMap<>();
+
+        response.put("isEmailAvailable", String.valueOf(isEmailAvailable));
+
+        return response;
+    }
+
 
     private void sendEmail(RegisterUserInput registerUserInput, String token) {
 

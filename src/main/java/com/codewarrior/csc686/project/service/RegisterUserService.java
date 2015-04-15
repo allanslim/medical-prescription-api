@@ -43,11 +43,16 @@ public class RegisterUserService extends BaseService {
 
     private SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-    private static String registerUserProcedure = "{ call RMP_USRMGT_PKG.REGISTER_USER(?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
+    private static String REGISTER_USER_STORED_PROCEDURE_NAME = "{ call RMP_USRMGT_PKG.REGISTER_USER(?,?,?,?,?,?,?,?,?,?,?,?,?,?)}";
+
+    private static String VALIDATE_MEMBER_STORED_PROCEDURE_NAME = "{ call RMP_USRMGT_PKG.Validate_Member(?,?,?,?,?,?)}";
+
+    private static String VALIDATE_USEREMAIL_PROCEDURE_NAME = "{ call RMP_USRMGT_PKG.Validate_User_Email(?,?)}";
+
 
     public String registerUser(RegisterUserInput registerUserInput) throws SQLException, ParseException {
 
-        CallableStatement callableStatement = createCallableStatement(registerUserProcedure);
+        CallableStatement callableStatement = createCallableStatement(REGISTER_USER_STORED_PROCEDURE_NAME);
 
         callableStatement.setInt(1, registerUserInput.groupId);
         callableStatement.setString(2, registerUserInput.insuranceId);
@@ -89,5 +94,76 @@ public class RegisterUserService extends BaseService {
             return token;
         }
         return StringUtils.EMPTY;
+    }
+
+
+//    PROCEDURE Validate_Member
+//                (
+//                 P_RX_GRPID      IN MRX_GROUP.GRP_ID%TYPE,
+//                 P_MBR_INSRID    IN MRX_MEMBER.INSURANCE_ID%TYPE,
+//                 P_MBR_FNAME     IN MRX_MEMBER.FIRST_NAME%TYPE,
+//                 P_MBR_LNAME     IN MRX_MEMBER.LAST_NAME%TYPE,
+//                 P_MBR_DOB       IN MRX_MEMBER.BIRTHDATE%TYPE,
+//                 P_REFCURMSG    OUT SYS_REFCURSOR
+//                 )
+    //  MSG_NAME (MRX_USR.DUP), MSG_DESCR (MEMBER ALREADY HAS RMP ACCOUNT)
+    public boolean isMemberValid(RegisterUserInput registerUserInput) throws SQLException, ParseException {
+        CallableStatement callableStatement = createCallableStatement(VALIDATE_MEMBER_STORED_PROCEDURE_NAME);
+
+        callableStatement.setInt(1, registerUserInput.groupId);
+        callableStatement.setString(2, registerUserInput.insuranceId);
+        callableStatement.setString(3, registerUserInput.firstName);
+        callableStatement.setString(4, registerUserInput.lastName);
+
+        long time = sdf.parse(registerUserInput.birthday).getTime();
+        callableStatement.setDate(5, new Date(time));
+
+        callableStatement.registerOutParameter(6, OracleTypes.CURSOR);
+
+        callableStatement.executeUpdate();
+
+        ResultSet resultSet = (ResultSet) callableStatement.getObject(6);
+
+        while (resultSet.next()) {
+            String messageName = resultSet.getString("MSG_NAME");
+            String description = resultSet.getString("MSG_DESCR");
+
+            LOG.info("messageName: " + messageName + " description: " + description);
+
+            if (!StringUtils.equals("SUCCESS", messageName)) {
+                throw new BadRequestException("400", description);
+            }
+
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isEmailAvailable(String email) throws SQLException {
+
+
+        CallableStatement callableStatement = createCallableStatement(VALIDATE_USEREMAIL_PROCEDURE_NAME);
+
+        callableStatement.setString(1, email);
+        callableStatement.registerOutParameter(2, OracleTypes.CURSOR);
+
+
+        callableStatement.executeUpdate();
+
+        ResultSet resultSet = (ResultSet) callableStatement.getObject(2);
+
+        while (resultSet.next()) {
+            String messageName = resultSet.getString("MSG_NAME");
+            String description = resultSet.getString("MSG_DESCR");
+
+            LOG.info("messageName: " + messageName + " description: " + description);
+
+            if (!StringUtils.equals("SUCCESS", messageName)) {
+                throw new BadRequestException("400", description);
+            }
+
+            return true;
+        }
+        return false;
     }
 }

@@ -3,6 +3,8 @@ package com.codewarrior.csc686.project.util;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static org.hamcrest.core.Is.is;
@@ -40,6 +42,25 @@ public class EitherTest {
 
         return Either.right(consumerId + "_XYZPROVIDER_ID");
 
+    }
+
+    @Test
+    public void testSomethingNotRelated() {
+
+        List<Double> prices = new ArrayList<Double>();
+        prices.add(5.1);
+        prices.add(2.1);
+        prices.add(3.1);
+
+
+        Double totalPrice = 0.0;
+        for (Double price : prices) {
+            totalPrice += price;
+        }
+        System.out.println("total price:" + totalPrice);
+
+        Double total2 = prices.stream().reduce(0.0, (left, right) -> left + right);
+        System.out.println("total price:" + total2);
     }
 
     @Test

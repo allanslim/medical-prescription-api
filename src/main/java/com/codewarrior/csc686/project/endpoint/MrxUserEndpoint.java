@@ -45,6 +45,6 @@ public class MrxUserEndpoint {
 
         mrxService.confirmUser(token);
 
-        return "Email Address Successfully Confirmed! You may login to the system.";
+        return "Your Email Address has been successfully Confirmed! You may login to the system.";
     }
 }
