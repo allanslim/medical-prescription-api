@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.sql.Date;
+import java.util.Optional;
 
 
 //PROCEDURE Register_User
@@ -48,6 +49,7 @@ public class RegisterUserService extends BaseService {
     private static String VALIDATE_MEMBER_STORED_PROCEDURE_NAME = "{ call RMP_USRMGT_PKG.Validate_Member(?,?,?,?,?,?)}";
 
     private static String VALIDATE_USEREMAIL_PROCEDURE_NAME = "{ call RMP_USRMGT_PKG.Validate_User_Email(?,?)}";
+
 
 
     public String registerUser(RegisterUserInput registerUserInput) throws SQLException, ParseException {

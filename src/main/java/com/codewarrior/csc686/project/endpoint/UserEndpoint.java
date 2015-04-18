@@ -66,7 +66,7 @@ public class UserEndpoint {
 
 
         Map<String,String> response = new HashMap<>();
-        response.put("registration", "successful");
+        response.put("isRegistrationSuccessful", "true");
 
         return response;
     }
