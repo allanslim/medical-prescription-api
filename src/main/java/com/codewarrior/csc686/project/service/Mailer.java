@@ -1,6 +1,10 @@
 package com.codewarrior.csc686.project.service;
 
 import freemarker.template.TemplateException;
+import org.apache.commons.mail.DefaultAuthenticator;
+import org.apache.commons.mail.Email;
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.SimpleEmail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +30,8 @@ public class Mailer {
 
     private static final Logger LOG = LoggerFactory.getLogger(Mailer.class);
 
-
     @Autowired
-    private JavaMailSender mailSender;
+    private Email email;
 
     @Autowired
     private FreeMarkerConfigurer freeMarkerConfigurer;
@@ -36,7 +39,7 @@ public class Mailer {
 
 
     @Async
-    public void sendConfirmationEmail(FreemarkerEmailModel freemarkerEmailModel) throws UnsupportedEncodingException, AddressException, javax.mail.MessagingException {
+    public void sendConfirmationEmail(FreemarkerEmailModel freemarkerEmailModel) throws UnsupportedEncodingException, AddressException, javax.mail.MessagingException, EmailException {
 
 
         StringBuffer content = new StringBuffer();
@@ -51,13 +54,11 @@ public class Mailer {
             LOG.error("error thrown in getting template", e);
         }
 
-        MimeMessage message =  mailSender.createMimeMessage();
-        InternetAddress sender = new InternetAddress(freemarkerEmailModel.getFromEmail(),"MRP Administrator");
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(freemarkerEmailModel.getToEmail()));
-        message.setFrom(sender);
-        message.setSubject(freemarkerEmailModel.getSubject());
-        message.setText(content.toString());
-        mailSender.send(message);
+        email.setSubject(freemarkerEmailModel.getSubject());
+        email.setMsg(content.toString());
+        email.addTo(freemarkerEmailModel.getToEmail());
+        email.send();
+
     }
 
 }

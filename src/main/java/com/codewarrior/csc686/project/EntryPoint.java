@@ -2,6 +2,9 @@ package com.codewarrior.csc686.project;
 
 import com.codewarrior.csc686.project.configuration.CommonConfiguration;
 import com.codewarrior.csc686.project.service.EmailValidatorService;
+import com.codewarrior.csc686.project.service.FreemarkerEmailModel;
+import com.codewarrior.csc686.project.service.Mailer;
+import org.apache.commons.mail.EmailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -11,6 +14,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
+import javax.mail.MessagingException;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 
@@ -76,19 +81,28 @@ public class EntryPoint extends WebMvcConfigurerAdapter {
 //
 //        registerUserService.registerUser(registerUserInput);
 
-
+//
 //        Mailer mailer = (Mailer) ctx.getBean("mailer");
 //
 //        FreemarkerEmailModel freemarkerEmailModel = new FreemarkerEmailModel.Builder().setToEmail("allanslim@gmail.com").setName("Allan").setUrl("http://testblah.com").
 //                setSubject("registration").setFromEmail("admin@ec2-54-145-194-211.compute-1.amazonaws.com").setTemplateName(FreemarkerEmailModel.VERIFICATION_TEMPLATE).build();
 //
+//        FreemarkerEmailModel freemarkerEmailModel2 = new FreemarkerEmailModel.Builder().setToEmail("allanslim@gmail.com").setName("Allan").setUrl("http://testblah.com").
+//                setSubject("registration & hotdog").setFromEmail("admin@ec2-54-145-194-211.compute-1.amazonaws.com").setTemplateName(FreemarkerEmailModel.VERIFICATION_TEMPLATE).build();
+//
+//
 //        try {
 //            mailer.sendConfirmationEmail(freemarkerEmailModel);
+//            mailer.sendConfirmationEmail(freemarkerEmailModel2);
 //            LOG.info("### EMAIL SENT##");
 //
 //        } catch (UnsupportedEncodingException e) {
+//            LOG.info("### EMAIL NOT SENT##");
 //            e.printStackTrace();
 //        } catch (MessagingException e) {
+//            LOG.info("### EMAIL NOT SENT##");
+//            e.printStackTrace();
+//        } catch (EmailException e) {
 //            e.printStackTrace();
 //        }
     }

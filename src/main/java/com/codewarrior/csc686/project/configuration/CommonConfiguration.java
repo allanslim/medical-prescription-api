@@ -7,15 +7,22 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.mail.DefaultAuthenticator;
+import org.apache.commons.mail.Email;
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.SimpleEmail;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.Jaxb2RootElementHttpMessageConverter;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import java.util.List;
@@ -28,6 +35,10 @@ public class CommonConfiguration extends WebMvcConfigurerAdapter {
 
     @Autowired
    	private Environment env;
+
+    @Autowired
+   	private LocalContainerEntityManagerFactoryBean localContainerEntityManagerFactoryBean;
+
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -84,20 +95,26 @@ public class CommonConfiguration extends WebMvcConfigurerAdapter {
     }
 
     @Bean
-   	public JavaMailSenderImpl mailSender()
+   	public Email email() throws EmailException {
+
+        Email email = new SimpleEmail();
+        email.setHostName(env.getProperty( "mail.host" ));
+        email.setSmtpPort(Integer.parseInt(env.getProperty("mail.port")));
+        email.setAuthenticator(new DefaultAuthenticator(env.getProperty( "mail.username" ), env.getProperty( "mail.password" )));
+        email.setSSL(true);
+        email.setFrom(env.getProperty( "mail.username" ));
+
+        return email;
+   	}
+
+    @Bean
+   	@Primary
+   	@Autowired
+   	public JpaTransactionManager transactionManager() throws Exception
    	{
-   		JavaMailSenderImpl javaMailSenderImpl = new JavaMailSenderImpl();
-   		Properties javaMailProperties = new Properties();
-   		javaMailProperties.put( "mail.smtp.starttls.enable", false );
-   		javaMailProperties.put( "mail.smtp.auth", false );
-   		javaMailProperties.put( "mail.smtp.host", env.getProperty( "mail.host" ) );
-   		javaMailProperties.put( "mail.smtp.timeout", 1000 );
-   		javaMailProperties.put( "mail.smtp.connectiontimeout", 1000 );
-   		javaMailProperties.put( "mail.smtp.quitwait", false );
-   		javaMailProperties.put("mail.smtp.ssl.enable", false);
-   		javaMailProperties.put( "mail.debug", true );
-   		javaMailSenderImpl.setJavaMailProperties(javaMailProperties);
-   		return javaMailSenderImpl;
+   		JpaTransactionManager txManager = new JpaTransactionManager();
+   		txManager.setEntityManagerFactory(localContainerEntityManagerFactoryBean.getObject());
+   		return txManager;
    	}
 
 

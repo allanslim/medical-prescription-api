@@ -8,6 +8,7 @@ import com.codewarrior.csc686.project.service.RegisterUserService;
 import com.codewarrior.csc686.project.service.UserService;
 import org.apache.catalina.connector.Request;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.mail.EmailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,6 +109,8 @@ public class UserEndpoint {
         } catch (MessagingException e) {
 
             LOG.error(String.format("Error sending confirmation email for user: %s", registerUserInput.email), e);
+        } catch (EmailException e) {
+            LOG.error(String.format("Error sending confirmation email for user: %s", registerUserInput.email), e);
         }
     }
 
@@ -116,7 +119,7 @@ public class UserEndpoint {
         FreemarkerEmailModel freemarkerEmailModel = new FreemarkerEmailModel.Builder().
                 setToEmail(registerUserInput.email).
                 setName(registerUserInput.firstName + " " + registerUserInput.lastName).
-                setUrl("http://" + host + "/mrxuser/confirmation/" + token).
+                setUrl( host + "/mrxuser/confirmation/" + token).
                 setSubject("MRP: Please confirm your registration").
                 setFromEmail("admin@ec2-54-145-194-211.compute-1.amazonaws.com").
                 setTemplateName(FreemarkerEmailModel.VERIFICATION_TEMPLATE).build();
