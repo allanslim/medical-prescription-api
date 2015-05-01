@@ -3,7 +3,6 @@ package com.codewarrior.csc686.project.service;
 import com.codewarrior.csc686.project.exception.BadRequestException;
 import com.codewarrior.csc686.project.model.Dependent;
 import com.codewarrior.csc686.project.model.PrescriptionHistory;
-import com.codewarrior.csc686.project.util.Tuple;
 import oracle.jdbc.OracleTypes;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -33,21 +32,23 @@ public class MemberInformationService extends BaseService {
     private static String PRESCRIPTION_HISTORY_NAME = "{ call RMP_MBRBEN_PKG.Prescription_History(?,?,?,?,?)}";
 
 
-    private Tuple<ResultSet,ResultSet> extractResultSetFor(String storedProcedure, String token) throws SQLException {
+    private CallableStatement extractResultSetFor(String storedProcedure, String token) throws SQLException {
+
         CallableStatement callableStatement = createCallableStatement(storedProcedure);
 
-          callableStatement.setString(1, token);
+        callableStatement.setString(1, token);
 
-          callableStatement.registerOutParameter(2, OracleTypes.CURSOR);
-          callableStatement.registerOutParameter(3, OracleTypes.CURSOR);
+        callableStatement.registerOutParameter(2, OracleTypes.CURSOR);
+        callableStatement.registerOutParameter(3, OracleTypes.CURSOR);
 
-          callableStatement.executeUpdate();
+        callableStatement.executeUpdate();
 
-          return new Tuple((ResultSet) callableStatement.getObject(2), (ResultSet) callableStatement.getObject(3));
-     }
+        return callableStatement;
+
+    }
 
 
-    private Tuple<ResultSet, ResultSet> extractResultSetPrescriptionHistory(String prescriptionHistoryName, String token, int mrbId, int period) throws SQLException {
+    private CallableStatement extractResultSetPrescriptionHistory(String prescriptionHistoryName, String token, int mrbId, int period) throws SQLException {
 
         CallableStatement callableStatement = createCallableStatement(prescriptionHistoryName);
 
@@ -61,7 +62,7 @@ public class MemberInformationService extends BaseService {
 
         callableStatement.executeUpdate();
 
-        return new Tuple((ResultSet) callableStatement.getObject(4), (ResultSet) callableStatement.getObject(5));
+        return callableStatement;
     }
 
 
@@ -69,73 +70,102 @@ public class MemberInformationService extends BaseService {
 
         Map<String, String> memberInfoMap = new HashMap<>();
 
-        Tuple<ResultSet, ResultSet> resultSetTuple = extractResultSetFor(WELCOME_MEMBER_PROCEDURE_NAME, token);
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet2 = null;
 
-        ResultSet resultSet = resultSetTuple.x;
-        ResultSet resultSet2 = resultSetTuple.y;
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
+        try {
 
-            LOG.info("messageName: " + messageName + " description: " + description);
+            callableStatement = extractResultSetFor(WELCOME_MEMBER_PROCEDURE_NAME, token);
 
-            if (!StringUtils.equals("SUCCESS", messageName)) {
-                throw new BadRequestException("400", description);
+
+            resultSet = (ResultSet) callableStatement.getObject(2);
+            resultSet2 = (ResultSet) callableStatement.getObject(3);
+
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+                while (resultSet2.next()) {
+                    memberInfoMap.put("insuranceId", resultSet2.getString("INSURANCE_ID"));
+                    memberInfoMap.put("lastName", resultSet2.getString("LAST_NAME"));
+                    memberInfoMap.put("firstName", resultSet2.getString("FIRST_NAME"));
+                    memberInfoMap.put("middleInitial", resultSet2.getString("MI"));
+                    memberInfoMap.put("groupId", resultSet2.getString("RXGRPID"));
+                    memberInfoMap.put("planName", resultSet2.getString("PLAN_NAME"));
+
+                }
             }
+        } catch (SQLException e) {
+            LOG.error("SQL EXCEPTION", e);
+        } catch (BadRequestException e) {
+            LOG.error("BAD REQUEST EXCEPTION", e);
+        } finally {
 
-            while (resultSet2.next()) {
-                memberInfoMap.put("insuranceId", resultSet2.getString("INSURANCE_ID"));
-                memberInfoMap.put("lastName", resultSet2.getString("LAST_NAME"));
-                memberInfoMap.put("firstName", resultSet2.getString("FIRST_NAME"));
-                memberInfoMap.put("middleInitial", resultSet2.getString("MI"));
-                memberInfoMap.put("groupId", resultSet2.getString("RXGRPID"));
-                memberInfoMap.put("planName", resultSet2.getString("PLAN_NAME"));
-
-            }
+            closeResources(callableStatement, resultSet, resultSet2);
         }
         return memberInfoMap;
     }
+
 
     // PF9H76WF3J8J26LJ4VZN2SB36LIQNOYJ3BFZID0WHU1C0Z0K92
     public Map<String, String> retrieveMemberAnnualBenefitSumary(String token) throws SQLException {
 
         Map<String, String> memberInfoMap = new HashMap<>();
 
-        Tuple<ResultSet, ResultSet> resultSetTuple = extractResultSetFor(WELCOME_ANNUAL_BENEFIT_SUMMARY_NAME, token);
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet2 = null;
 
-        ResultSet resultSet = resultSetTuple.x;
-        ResultSet resultSet2 = resultSetTuple.y;
+        try {
+            callableStatement = extractResultSetFor(WELCOME_ANNUAL_BENEFIT_SUMMARY_NAME, token);
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
+            resultSet = (ResultSet) callableStatement.getObject(2);
+            resultSet2 = (ResultSet) callableStatement.getObject(3);
 
-            LOG.info("messageName: " + messageName + " description: " + description);
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
 
-            if (!StringUtils.equals("SUCCESS", messageName)) {
-                throw new BadRequestException("400", description);
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+
+                while (resultSet2.next()) {
+                    memberInfoMap.put("insuranceId", resultSet2.getString("INSURANCE_ID"));
+                    memberInfoMap.put("lastName", resultSet2.getString("LAST_NAME"));
+                    memberInfoMap.put("firstName", resultSet2.getString("FIRST_NAME"));
+                    memberInfoMap.put("middleInitial", resultSet2.getString("MI"));
+                    memberInfoMap.put("groupId", resultSet2.getString("RXGRPID"));
+                    memberInfoMap.put("planName", resultSet2.getString("PLAN_NAME"));
+                    memberInfoMap.put("deductibleAmountIndividual", resultSet2.getString("DEDUCTIBLE_AMT_IND"));
+                    memberInfoMap.put("deductibleAmountFamily", resultSet2.getString("DEDUCTIBLE_AMT_FAM"));
+                    memberInfoMap.put("maximumOutOfPocketIndividual", resultSet2.getString("MAX_OOP_IND"));
+                    memberInfoMap.put("maximumOutOfPocketFamily", resultSet2.getString("MAX_OOP_FAM"));
+                    memberInfoMap.put("benefitAmountIndividual", resultSet2.getString("BENEFIT_AMOUNT_IND"));
+                    memberInfoMap.put("benefitAmountFamily", resultSet2.getString("BENEFIT_AMOUNT_FAM"));
+                    memberInfoMap.put("coInsuranceIndividual", resultSet2.getString("COINSURANCE_IND"));
+                    memberInfoMap.put("coInsuranceFamily", resultSet2.getString("COINSURANCE_FAM"));
+
+                }
             }
+        } catch (SQLException e) {
+            LOG.error("DATABASE ERROR!!! ", e);
+        } finally {
+            closeResources(callableStatement, resultSet, resultSet2);
 
-
-            while (resultSet2.next()) {
-                memberInfoMap.put("insuranceId", resultSet2.getString("INSURANCE_ID"));
-                memberInfoMap.put("lastName", resultSet2.getString("LAST_NAME"));
-                memberInfoMap.put("firstName", resultSet2.getString("FIRST_NAME"));
-                memberInfoMap.put("middleInitial", resultSet2.getString("MI"));
-                memberInfoMap.put("groupId", resultSet2.getString("RXGRPID"));
-                memberInfoMap.put("planName", resultSet2.getString("PLAN_NAME"));
-                memberInfoMap.put("deductibleAmountIndividual", resultSet2.getString("DEDUCTIBLE_AMT_IND"));
-                memberInfoMap.put("deductibleAmountFamily", resultSet2.getString("DEDUCTIBLE_AMT_FAM"));
-                memberInfoMap.put("maximumOutOfPocketIndividual", resultSet2.getString("MAX_OOP_IND"));
-                memberInfoMap.put("maximumOutOfPocketFamily", resultSet2.getString("MAX_OOP_FAM"));
-                memberInfoMap.put("benefitAmountIndividual", resultSet2.getString("BENEFIT_AMOUNT_IND"));
-                memberInfoMap.put("benefitAmountFamily", resultSet2.getString("BENEFIT_AMOUNT_FAM"));
-                memberInfoMap.put("coInsuranceIndividual", resultSet2.getString("COINSURANCE_IND"));
-                memberInfoMap.put("coInsuranceFamily", resultSet2.getString("COINSURANCE_FAM"));
-
-            }
         }
+
         return memberInfoMap;
 
     }
@@ -144,32 +174,45 @@ public class MemberInformationService extends BaseService {
 
         List<Dependent> dependents = new ArrayList<>();
 
-        Tuple<ResultSet, ResultSet> resultSetTuple = extractResultSetFor(MEMBER_DEPENDENTS_NAME, token);
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet2 = null;
 
-        ResultSet resultSet = resultSetTuple.x;
-        ResultSet resultSet2 = resultSetTuple.y;
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
+        try {
+            callableStatement = extractResultSetFor(MEMBER_DEPENDENTS_NAME, token);
 
-            LOG.info("messageName: " + messageName + " description: " + description);
+            resultSet = (ResultSet) callableStatement.getObject(2);
+            resultSet2 = (ResultSet) callableStatement.getObject(3);
 
-            if (!StringUtils.equals("SUCCESS", messageName)) {
-                throw new BadRequestException("400", description);
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+
+                while (resultSet2.next()) {
+                    Dependent dependent = new Dependent();
+                    dependent.mbrId = resultSet2.getString("MBR_ID");
+                    dependent.mbrName = resultSet2.getString("MBR_NAME");
+                    dependent.relationship = resultSet2.getString("RELATIONSHIP");
+
+                    dependents.add(dependent);
+
+
+                }
             }
-
-
-            while (resultSet2.next()) {
-                Dependent dependent = new Dependent();
-                dependent.mbrId = resultSet2.getString("MBR_ID");
-                dependent.mbrName = resultSet2.getString("MBR_NAME");
-                dependent.relationship = resultSet2.getString("RELATIONSHIP");
-
-                dependents.add(dependent);
-
-
-            }
+        } catch (SQLException e) {
+            LOG.error("SQL EXCEPTION", e);
+        } catch (BadRequestException e) {
+            LOG.error("BAD REQUEST EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, resultSet2);
         }
         return dependents;
     }
@@ -178,35 +221,50 @@ public class MemberInformationService extends BaseService {
 
         List<PrescriptionHistory> prescriptionHistories = new ArrayList<>();
 
-        Tuple<ResultSet, ResultSet> resultSetTuple = extractResultSetPrescriptionHistory(PRESCRIPTION_HISTORY_NAME, token, mrbId, period);
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet2 = null;
 
-        ResultSet resultSet = resultSetTuple.x;
-        ResultSet resultSet2 = resultSetTuple.y;
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
+        try {
+            callableStatement = extractResultSetPrescriptionHistory(PRESCRIPTION_HISTORY_NAME, token, mrbId, period);
 
-            LOG.info("messageName: " + messageName + " description: " + description);
+            resultSet = (ResultSet) callableStatement.getObject(4);
+            resultSet2 = (ResultSet) callableStatement.getObject(5);
 
-            if (!StringUtils.equals("SUCCESS", messageName)) {
-                throw new BadRequestException("400", description);
+
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+
+                while (resultSet2.next()) {
+                    PrescriptionHistory prescriptionHistory = new PrescriptionHistory();
+                    prescriptionHistory.rxNumber = resultSet2.getString("RX_NUMBER");
+                    prescriptionHistory.dateFilled = resultSet2.getDate("DATE_FILLED");
+                    prescriptionHistory.drug = resultSet2.getString("DRUG");
+                    prescriptionHistory.mbrPaid = resultSet2.getString("MBR_PAID");
+                    prescriptionHistory.pharmacy = resultSet2.getString("PHARMACY");
+
+                    prescriptionHistories.add(prescriptionHistory);
+
+
+                }
             }
-
-
-            while (resultSet2.next()) {
-                PrescriptionHistory prescriptionHistory = new PrescriptionHistory();
-                prescriptionHistory.rxNumber = resultSet2.getString("RX_NUMBER");
-                prescriptionHistory.dateFilled = resultSet2.getDate("DATE_FILLED");
-                prescriptionHistory.drug = resultSet2.getString("DRUG");
-                prescriptionHistory.mbrPaid = resultSet2.getString("MBR_PAID");
-                prescriptionHistory.pharmacy = resultSet2.getString("PHARMACY");
-
-                prescriptionHistories.add(prescriptionHistory);
-
-
-            }
+        } catch (SQLException e) {
+            LOG.error("SQL EXCEPTION", e);
+        } catch (BadRequestException e) {
+            LOG.error("BAD REQUEST EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, resultSet2);
         }
+
         return prescriptionHistories;
     }
 

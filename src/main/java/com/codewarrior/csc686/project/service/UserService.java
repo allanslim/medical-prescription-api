@@ -22,26 +22,37 @@ public class UserService extends BaseService {
 
     public String login(String email, String password) throws SQLException {
 
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
 
-        CallableStatement callableStatement = getCallableStatement(email, password);
 
-        callableStatement.executeUpdate();
+        try {
+            callableStatement = getCallableStatement(email, password);
 
-        ResultSet resultSet = (ResultSet) callableStatement.getObject(3);
+            callableStatement.executeUpdate();
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
-            LOG.info("messageName: " + messageName + " description: " + description);
+            resultSet = (ResultSet) callableStatement.getObject(3);
 
-            String token =  resultSet.getString("TOKEN");
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+                LOG.info("messageName: " + messageName + " description: " + description);
 
-            if(StringUtils.isBlank(token)) {
-                throw new BadRequestException("400", description);
+                String token = resultSet.getString("TOKEN");
+
+                if (StringUtils.isBlank(token)) {
+                    throw new BadRequestException("400", description);
+                }
+
+                return token;
+
             }
-
-            return token;
-
+        } catch (SQLException e) {
+            LOG.error("SQL EXCEPTION", e);
+        } catch (BadRequestException e) {
+            LOG.error("BAD REQUEST EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, null);
         }
         return StringUtils.EMPTY;
     }

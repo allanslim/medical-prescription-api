@@ -10,12 +10,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.CallableStatement;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.sql.Date;
-import java.util.Optional;
 
 
 //PROCEDURE Register_User
@@ -51,55 +50,68 @@ public class RegisterUserService extends BaseService {
     private static String VALIDATE_USEREMAIL_PROCEDURE_NAME = "{ call RMP_USRMGT_PKG.Validate_User_Email(?,?)}";
 
 
-
     public String registerUser(RegisterUserInput registerUserInput) throws SQLException, ParseException {
 
-        CallableStatement callableStatement = createCallableStatement(REGISTER_USER_STORED_PROCEDURE_NAME);
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
 
-        callableStatement.setInt(1, registerUserInput.groupId);
-        callableStatement.setString(2, registerUserInput.insuranceId);
-        callableStatement.setString(3, registerUserInput.firstName);
-        callableStatement.setString(4, registerUserInput.lastName);
+        try {
+            callableStatement = createCallableStatement(REGISTER_USER_STORED_PROCEDURE_NAME);
 
-        long time = sdf.parse(registerUserInput.birthday).getTime();
-        callableStatement.setDate(5, new Date(time));
+            callableStatement.setInt(1, registerUserInput.groupId);
+            callableStatement.setString(2, registerUserInput.insuranceId);
+            callableStatement.setString(3, registerUserInput.firstName);
+            callableStatement.setString(4, registerUserInput.lastName);
 
-        callableStatement.setString(6, registerUserInput.email);
-        callableStatement.setString(7, registerUserInput.password);
+            long time = sdf.parse(registerUserInput.birthday).getTime();
+            callableStatement.setDate(5, new Date(time));
 
-        callableStatement.setString(8, registerUserInput.seqQ1);
-        callableStatement.setString(9, registerUserInput.seqA1);
+            callableStatement.setString(6, registerUserInput.email);
+            callableStatement.setString(7, registerUserInput.password);
 
-        callableStatement.setString(10, registerUserInput.seqQ2);
-        callableStatement.setString(11, registerUserInput.seqA2);
+            callableStatement.setString(8, registerUserInput.seqQ1);
+            callableStatement.setString(9, registerUserInput.seqA1);
 
-        callableStatement.setString(12, registerUserInput.seqQ3);
-        callableStatement.setString(13, registerUserInput.seqA3);
+            callableStatement.setString(10, registerUserInput.seqQ2);
+            callableStatement.setString(11, registerUserInput.seqA2);
 
-        callableStatement.registerOutParameter(14, OracleTypes.CURSOR);
+            callableStatement.setString(12, registerUserInput.seqQ3);
+            callableStatement.setString(13, registerUserInput.seqA3);
 
-        callableStatement.executeUpdate();
+            callableStatement.registerOutParameter(14, OracleTypes.CURSOR);
 
-        ResultSet resultSet = (ResultSet) callableStatement.getObject(14);
+            callableStatement.executeUpdate();
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
-            String token = resultSet.getString("TOKEN");
+            resultSet = (ResultSet) callableStatement.getObject(14);
 
-            LOG.info("messageName: " + messageName + " description: " + description);
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+                String token = resultSet.getString("TOKEN");
 
-            if (!StringUtils.equals("SUCCESS", messageName)) {
-                throw new BadRequestException("400", description);
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    closeResources(callableStatement, resultSet, null);
+                    throw new BadRequestException("400", description);
+                }
+
+                closeResources(callableStatement, resultSet, null);
+                return token;
             }
-
-            return token;
+        } catch (SQLException e) {
+            LOG.error("SQL EXCEPTION", e);
+        } catch (BadRequestException e) {
+            LOG.error("BAD REQUEST EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, null);
         }
+
         return StringUtils.EMPTY;
     }
 
 
-//    PROCEDURE Validate_Member
+    //    PROCEDURE Validate_Member
 //                (
 //                 P_RX_GRPID      IN MRX_GROUP.GRP_ID%TYPE,
 //                 P_MBR_INSRID    IN MRX_MEMBER.INSURANCE_ID%TYPE,
@@ -110,62 +122,86 @@ public class RegisterUserService extends BaseService {
 //                 )
     //  MSG_NAME (MRX_USR.DUP), MSG_DESCR (MEMBER ALREADY HAS RMP ACCOUNT)
     public boolean isMemberValid(RegisterUserInput registerUserInput) throws SQLException, ParseException {
-        CallableStatement callableStatement = createCallableStatement(VALIDATE_MEMBER_STORED_PROCEDURE_NAME);
 
-        callableStatement.setInt(1, registerUserInput.groupId);
-        callableStatement.setString(2, registerUserInput.insuranceId);
-        callableStatement.setString(3, registerUserInput.firstName);
-        callableStatement.setString(4, registerUserInput.lastName);
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
 
-        long time = sdf.parse(registerUserInput.birthday).getTime();
-        callableStatement.setDate(5, new Date(time));
+        try {
+            callableStatement = createCallableStatement(VALIDATE_MEMBER_STORED_PROCEDURE_NAME);
 
-        callableStatement.registerOutParameter(6, OracleTypes.CURSOR);
+            callableStatement.setInt(1, registerUserInput.groupId);
+            callableStatement.setString(2, registerUserInput.insuranceId);
+            callableStatement.setString(3, registerUserInput.firstName);
+            callableStatement.setString(4, registerUserInput.lastName);
 
-        callableStatement.executeUpdate();
+            long time = sdf.parse(registerUserInput.birthday).getTime();
+            callableStatement.setDate(5, new Date(time));
 
-        ResultSet resultSet = (ResultSet) callableStatement.getObject(6);
+            callableStatement.registerOutParameter(6, OracleTypes.CURSOR);
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
+            callableStatement.executeUpdate();
 
-            LOG.info("messageName: " + messageName + " description: " + description);
+            resultSet = (ResultSet) callableStatement.getObject(6);
 
-            if (!StringUtils.equals("SUCCESS", messageName)) {
-                throw new BadRequestException("400", description);
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+                return true;
             }
-
-            return true;
+        } catch (SQLException e) {
+            LOG.error("SQL EXCEPTION", e);
+        } catch (BadRequestException e) {
+            LOG.error("BAD REQUEST EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, null);
         }
         return false;
     }
 
     public boolean isEmailAvailable(String email) throws SQLException {
 
-
-        CallableStatement callableStatement = createCallableStatement(VALIDATE_USEREMAIL_PROCEDURE_NAME);
-
-        callableStatement.setString(1, email);
-        callableStatement.registerOutParameter(2, OracleTypes.CURSOR);
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
 
 
-        callableStatement.executeUpdate();
+        try {
+             callableStatement = createCallableStatement(VALIDATE_USEREMAIL_PROCEDURE_NAME);
 
-        ResultSet resultSet = (ResultSet) callableStatement.getObject(2);
+            callableStatement.setString(1, email);
+            callableStatement.registerOutParameter(2, OracleTypes.CURSOR);
 
-        while (resultSet.next()) {
-            String messageName = resultSet.getString("MSG_NAME");
-            String description = resultSet.getString("MSG_DESCR");
 
-            LOG.info("messageName: " + messageName + " description: " + description);
+            callableStatement.executeUpdate();
 
-            if (!StringUtils.equals("SUCCESS", messageName)) {
-                throw new BadRequestException("400", description);
+             resultSet = (ResultSet) callableStatement.getObject(2);
+
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+                return true;
             }
-
-            return true;
+        } catch (SQLException e) {
+            LOG.error("SQL EXCEPTION", e);
+        } catch (BadRequestException e) {
+            LOG.error("BAD REQUEST EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, null);
         }
+
         return false;
     }
 }
