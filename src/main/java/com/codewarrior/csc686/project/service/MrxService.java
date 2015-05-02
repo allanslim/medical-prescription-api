@@ -85,4 +85,9 @@ public class MrxService {
 
         return pharmacyService.retrievePharmacy(token, zipcode, radius);
     }
+
+    public List<String> retrieveDrugs(String token, String drug) throws SQLException {
+
+        return pharmacyService.retrieveDrugs(token, drug);
+    }
 }

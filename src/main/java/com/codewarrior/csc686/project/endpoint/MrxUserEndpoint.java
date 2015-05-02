@@ -115,6 +115,13 @@ public class MrxUserEndpoint {
                                            @PathVariable Integer radius) throws SQLException {
 
         return mrxService.retrievePharmacy(token, zipcode, radius);
+    }
 
+
+    @RequestMapping( method = RequestMethod.GET, value = "/{token}/drug/{drug}")
+    public List<String> retrieveDrugs( @PathVariable String token,
+                                       @PathVariable String drug)  throws SQLException {
+
+        return mrxService.retrieveDrugs(token, drug);
     }
 }

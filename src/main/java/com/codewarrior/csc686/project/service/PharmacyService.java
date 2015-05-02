@@ -22,6 +22,55 @@ public class PharmacyService extends BaseService {
 
     private static String LOCATE_PHARMACY_PROCEDURE_NAME = "{ call RMP_MBRBEN_PKG.LOCATE_PHARMACY(?,?,?,?,?)}";
 
+    private static String RETRIEVE_DRUG_PROCEDURE_NAME = "{ call RMP_MBRBEN_PKG.DRUGNAME_LIST(?,?,?,?,?)}";
+
+
+    public List<String> retrieveDrugs(String token, String drug) throws SQLException {
+
+        List<String> drugs = new ArrayList<>();
+
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet2 = null;
+
+        try {
+            callableStatement = createCallableStatement(RETRIEVE_DRUG_PROCEDURE_NAME);
+
+            callableStatement.setString(1, token);
+            callableStatement.setString(2, drug);
+            callableStatement.setInt(3, 20);
+
+            callableStatement.registerOutParameter(4, OracleTypes.CURSOR);
+            callableStatement.registerOutParameter(5, OracleTypes.CURSOR);
+
+            callableStatement.executeUpdate();
+
+            resultSet = (ResultSet) callableStatement.getObject(4);
+            resultSet2 = (ResultSet) callableStatement.getObject(5);
+
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+                while (resultSet2.next()) {
+                    drugs.add(resultSet2.getString("DRUG_NAME"));
+                }
+            }
+
+        } catch (Exception e) {
+            LOG.error("EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, resultSet2);
+        }
+
+        return drugs;
+    }
+
 
     public List<Pharmacy> retrievePharmacy(String token, Integer zipcode, Integer radius) throws SQLException {
 
@@ -97,4 +146,6 @@ public class PharmacyService extends BaseService {
         callableStatement.registerOutParameter(5, OracleTypes.CURSOR);
         return callableStatement;
     }
+
+
 }
