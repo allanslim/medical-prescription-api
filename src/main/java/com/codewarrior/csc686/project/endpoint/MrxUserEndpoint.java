@@ -2,6 +2,7 @@ package com.codewarrior.csc686.project.endpoint;
 
 import com.codewarrior.csc686.project.entity.MrxUser;
 import com.codewarrior.csc686.project.model.Dependent;
+import com.codewarrior.csc686.project.model.DrugDetail;
 import com.codewarrior.csc686.project.model.Pharmacy;
 import com.codewarrior.csc686.project.model.PrescriptionHistory;
 import com.codewarrior.csc686.project.service.MemberInformationService;
@@ -123,5 +124,11 @@ public class MrxUserEndpoint {
                                        @PathVariable String drug)  throws SQLException {
 
         return mrxService.retrieveDrugs(token, drug);
+    }
+
+    @RequestMapping( method = RequestMethod.GET, value = "/{token}/drug-details/{drugDescription}")
+    public List<DrugDetail> retrieveDrugDetails( @PathVariable String token,
+                                                 @PathVariable String drugDescription) throws SQLException {
+        return mrxService.retrieveDrugDetails(token, drugDescription);
     }
 }

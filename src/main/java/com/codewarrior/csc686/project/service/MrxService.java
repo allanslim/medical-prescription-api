@@ -1,6 +1,7 @@
 package com.codewarrior.csc686.project.service;
 
 import com.codewarrior.csc686.project.entity.MrxUser;
+import com.codewarrior.csc686.project.model.DrugDetail;
 import com.codewarrior.csc686.project.model.Pharmacy;
 import com.codewarrior.csc686.project.repository.BackdoorRepository;
 import com.codewarrior.csc686.project.repository.MrxUserRepository;
@@ -89,5 +90,10 @@ public class MrxService {
     public List<String> retrieveDrugs(String token, String drug) throws SQLException {
 
         return pharmacyService.retrieveDrugs(token, drug);
+    }
+
+    public List<DrugDetail> retrieveDrugDetails(String token, String drugDescription) throws SQLException {
+
+        return pharmacyService.retrieveDrugDetails(token, drugDescription);
     }
 }
