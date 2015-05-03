@@ -160,7 +160,7 @@ public class MemberInformationService extends BaseService {
                 }
             }
         } catch (SQLException e) {
-            LOG.error("DATABASE ERROR!!! ", e);
+            LOG.error("DATABASE ERROR!!! " + e.getLocalizedMessage(), e);
         } finally {
             closeResources(callableStatement, resultSet, resultSet2);
 
