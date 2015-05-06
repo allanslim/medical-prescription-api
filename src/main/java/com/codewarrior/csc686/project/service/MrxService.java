@@ -2,6 +2,7 @@ package com.codewarrior.csc686.project.service;
 
 import com.codewarrior.csc686.project.entity.MrxUser;
 import com.codewarrior.csc686.project.model.DrugDetail;
+import com.codewarrior.csc686.project.model.DrugPrice;
 import com.codewarrior.csc686.project.model.Pharmacy;
 import com.codewarrior.csc686.project.repository.BackdoorRepository;
 import com.codewarrior.csc686.project.repository.MrxUserRepository;
@@ -28,16 +29,19 @@ public class MrxService {
     private PharmacyService pharmacyService;
 
 
-    public Optional<MrxUser> retrieveMrxUserByEmail(String email) {
+    public Optional<MrxUser> retrieveUserByToken(String token) {
 
-        List<MrxUser> users = mrxUserRepository.findByEmail(email);
+        List<MrxUser> users = mrxUserRepository.findByToken(token);
 
         if(!users.isEmpty()) {
             return Optional.of(users.get(0));
         }
 
         return Optional.empty();
+
     }
+
+
 
     public Optional<String> retrieveUserToken(String token) {
 
@@ -95,5 +99,11 @@ public class MrxService {
     public List<DrugDetail> retrieveDrugDetails(String token, String drugDescription) throws SQLException {
 
         return pharmacyService.retrieveDrugDetails(token, drugDescription);
+    }
+
+
+    public DrugPrice retrieveDrugPrice(String token, String drugNdc, Integer pharmacyId) throws SQLException {
+
+        return pharmacyService.retrieveDrugPrice(token, drugNdc, pharmacyId);
     }
 }

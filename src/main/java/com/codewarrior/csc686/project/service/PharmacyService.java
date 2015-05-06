@@ -2,6 +2,7 @@ package com.codewarrior.csc686.project.service;
 
 import com.codewarrior.csc686.project.exception.BadRequestException;
 import com.codewarrior.csc686.project.model.DrugDetail;
+import com.codewarrior.csc686.project.model.DrugPrice;
 import com.codewarrior.csc686.project.model.Pharmacy;
 import oracle.jdbc.OracleTypes;
 import org.apache.commons.lang3.StringUtils;
@@ -26,6 +27,60 @@ public class PharmacyService extends BaseService {
     private static String RETRIEVE_DRUG_PROCEDURE_NAME = "{ call RMP_MBRBEN_PKG.DRUGNAME_LIST(?,?,?,?,?)}";
 
     private static String RETRIEVE_DRUG_DETAILS_PROCEDURE_NAME = "{ call RMP_MBRBEN_PKG.Drug_DosageFormStren(?,?,?,?,?)}";
+
+    private static String DRUG_PRICING_PROCEDURE_NAME = "{ call RMP_MBRBEN_PKG.Drug_Pricing(?,?,?,?,?) }";
+
+
+    public DrugPrice retrieveDrugPrice(String token, String drugNdc, Integer pharmacyId) throws SQLException {
+
+        DrugPrice drugPrice = new DrugPrice();
+
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet2 = null;
+
+        try {
+            callableStatement = createCallableStatement(DRUG_PRICING_PROCEDURE_NAME);
+
+            callableStatement.setString(1, token);
+            callableStatement.setString(2, drugNdc);
+            callableStatement.setInt(3, pharmacyId);
+
+            callableStatement.registerOutParameter(4, OracleTypes.CURSOR);
+            callableStatement.registerOutParameter(5, OracleTypes.CURSOR);
+
+            callableStatement.executeUpdate();
+
+            resultSet = (ResultSet) callableStatement.getObject(4);
+            resultSet2 = (ResultSet) callableStatement.getObject(5);
+
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+                while (resultSet2.next()) {
+                    drugPrice.brandGen = resultSet2.getString("BRAND_GEN");
+                    drugPrice.drugName = resultSet2.getString("DRUG_NAME");
+                    drugPrice.formularyStatus = resultSet2.getString("FORMULA_STATUS");
+                    drugPrice.retail = resultSet2.getString("RETAIL");
+                    drugPrice.eds90 = resultSet2.getString("EDS90");
+                    drugPrice.mailOrder = resultSet2.getString("MAIL_ORDER");
+                    return drugPrice;
+                }
+            }
+
+        } catch (Exception e) {
+            LOG.error("EXCEPTION", e);
+        } finally {
+            closeResources(callableStatement, resultSet, resultSet2);
+        }
+        return drugPrice;
+    }
 
 
     public List<DrugDetail> retrieveDrugDetails(String token, String drugDescription) throws SQLException {
@@ -200,6 +255,5 @@ public class PharmacyService extends BaseService {
         return callableStatement;
     }
 
-
-
 }
+

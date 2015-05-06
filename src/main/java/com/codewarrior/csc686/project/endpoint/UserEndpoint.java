@@ -62,14 +62,16 @@ public class UserEndpoint {
 
         String token = registerUserService.registerUser(registerUserInput);
 
+        if(StringUtils.isNotBlank(token)) {
+            sendEmail(registerUserInput, token);
 
-        sendEmail(registerUserInput, token);
+            Map<String,String> response = new HashMap<>();
+            response.put("isRegistrationSuccessful", "true");
 
+            return response;
+        }
 
-        Map<String,String> response = new HashMap<>();
-        response.put("isRegistrationSuccessful", "true");
-
-        return response;
+        throw new BadRequestException("BAD_REQUEST", "Registration Failed!");
     }
 
     @RequestMapping( method = RequestMethod.POST, value = "/validateMember")

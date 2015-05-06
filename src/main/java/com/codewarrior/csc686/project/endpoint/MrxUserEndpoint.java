@@ -1,10 +1,7 @@
 package com.codewarrior.csc686.project.endpoint;
 
 import com.codewarrior.csc686.project.entity.MrxUser;
-import com.codewarrior.csc686.project.model.Dependent;
-import com.codewarrior.csc686.project.model.DrugDetail;
-import com.codewarrior.csc686.project.model.Pharmacy;
-import com.codewarrior.csc686.project.model.PrescriptionHistory;
+import com.codewarrior.csc686.project.model.*;
 import com.codewarrior.csc686.project.service.MemberInformationService;
 import com.codewarrior.csc686.project.service.MrxService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,10 +28,10 @@ public class MrxUserEndpoint {
     private MemberInformationService memberInformationService;
 
 
-    @RequestMapping(method = RequestMethod.GET, value = "/email/{email}")
-    public MrxUser retrieveByEmail(@PathVariable String email) {
+    @RequestMapping(method = RequestMethod.GET, value = "/info/{token}")
+    public MrxUser retrieveByToken(@PathVariable String token) {
 
-        Optional<MrxUser> optionalMrxUser = mrxService.retrieveMrxUserByEmail(email);
+        Optional<MrxUser> optionalMrxUser = mrxService.retrieveUserByToken(token);
 
         return optionalMrxUser.orElseGet(() -> new MrxUser());
     }
@@ -130,5 +127,10 @@ public class MrxUserEndpoint {
     public List<DrugDetail> retrieveDrugDetails( @PathVariable String token,
                                                  @PathVariable String drugDescription) throws SQLException {
         return mrxService.retrieveDrugDetails(token, drugDescription);
+    }
+
+    @RequestMapping( method = RequestMethod.GET, value = "/{token}/drug-price/{drugNdc}/pharmacyId/{pharmacyId}")
+    public DrugPrice retrieveDrugPrice(@PathVariable String token, @PathVariable String drugNdc, @PathVariable Integer pharmacyId) throws SQLException {
+        return mrxService.retrieveDrugPrice(token, drugNdc, pharmacyId);
     }
 }
