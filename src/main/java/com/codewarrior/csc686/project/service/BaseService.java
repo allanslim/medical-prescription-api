@@ -25,17 +25,17 @@ public class BaseService {
 
     protected void closeResources(CallableStatement callableStatement, ResultSet resultSet, ResultSet resultSet2) throws SQLException {
 
-//        if (resultSet != null) {
-//            resultSet.close();
-//        }
-//
-//        if (resultSet2 != null) {
-//            resultSet2.close();
-//        }
-//
-//        if (callableStatement != null) {
-//            callableStatement.close();
-//        }
+        if (resultSet != null) {
+            resultSet.close();
+        }
+
+        if (resultSet2 != null) {
+            resultSet2.close();
+        }
+
+        if (callableStatement != null) {
+            callableStatement.close();
+        }
     }
 
 
