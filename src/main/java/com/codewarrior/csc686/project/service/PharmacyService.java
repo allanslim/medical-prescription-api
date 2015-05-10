@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -39,8 +40,12 @@ public class PharmacyService extends BaseService {
         ResultSet resultSet = null;
         ResultSet resultSet2 = null;
 
+        Connection connection = null;
+
         try {
-            callableStatement = createCallableStatement(DRUG_PRICING_PROCEDURE_NAME);
+            connection = super.getConnection();
+
+            callableStatement = createCallableStatement(connection, DRUG_PRICING_PROCEDURE_NAME);
 
             callableStatement.setString(1, token);
             callableStatement.setString(2, drugNdc);
@@ -66,7 +71,7 @@ public class PharmacyService extends BaseService {
                 while (resultSet2.next()) {
                     drugPrice.brandGen = resultSet2.getString("BRAND_GEN");
                     drugPrice.drugName = resultSet2.getString("DRUG_NAME");
-                    drugPrice.formularyStatus = resultSet2.getString("FORMULA_STATUS");
+                    drugPrice.formularyStatus = resultSet2.getString("FORMULARY_STATUS");
                     drugPrice.retail = resultSet2.getString("RETAIL");
                     drugPrice.eds90 = resultSet2.getString("EDS90");
                     drugPrice.mailOrder = resultSet2.getString("MAIL_ORDER");
@@ -77,7 +82,7 @@ public class PharmacyService extends BaseService {
         } catch (Exception e) {
             LOG.error("EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
         }
         return drugPrice;
     }
@@ -90,9 +95,11 @@ public class PharmacyService extends BaseService {
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
         ResultSet resultSet2 = null;
+        Connection connection = null;
 
         try {
-            callableStatement = createCallableStatement(RETRIEVE_DRUG_DETAILS_PROCEDURE_NAME);
+            connection = super.getConnection();
+            callableStatement = createCallableStatement(connection, RETRIEVE_DRUG_DETAILS_PROCEDURE_NAME);
 
             callableStatement.setString(1, token);
             callableStatement.setString(2, drugDescription);
@@ -126,7 +133,7 @@ public class PharmacyService extends BaseService {
         } catch (Exception e) {
             LOG.error("EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
         }
 
         return drugDetails;
@@ -140,9 +147,11 @@ public class PharmacyService extends BaseService {
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
         ResultSet resultSet2 = null;
+        Connection connection = null;
 
         try {
-            callableStatement = createCallableStatement(RETRIEVE_DRUG_PROCEDURE_NAME);
+            connection = super.getConnection();
+            callableStatement = createCallableStatement(connection, RETRIEVE_DRUG_PROCEDURE_NAME);
 
             callableStatement.setString(1, token);
             callableStatement.setString(2, drug);
@@ -173,7 +182,7 @@ public class PharmacyService extends BaseService {
         } catch (Exception e) {
             LOG.error("EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
         }
 
         return drugs;
@@ -188,9 +197,10 @@ public class PharmacyService extends BaseService {
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
         ResultSet resultSet2 = null;
-
+        Connection connection = null;
         try {
-            callableStatement = getCallableStatement(token, zipcode, radius);
+            connection = super.getConnection();
+            callableStatement = getCallableStatement(connection, token, zipcode, radius);
 
             callableStatement.executeUpdate();
 
@@ -236,15 +246,15 @@ public class PharmacyService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
         }
 
         return pharmacies;
     }
 
-    protected CallableStatement getCallableStatement(String token, Integer zipcode, Integer radius) throws SQLException {
+    protected CallableStatement getCallableStatement(Connection connection, String token, Integer zipcode, Integer radius) throws SQLException {
 
-        CallableStatement callableStatement = createCallableStatement(LOCATE_PHARMACY_PROCEDURE_NAME);
+        CallableStatement callableStatement = createCallableStatement(connection, LOCATE_PHARMACY_PROCEDURE_NAME);
 
         callableStatement.setString(1, token);
         callableStatement.setInt(2, zipcode);

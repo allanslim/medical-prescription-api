@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -32,9 +33,9 @@ public class MemberInformationService extends BaseService {
     private static String PRESCRIPTION_HISTORY_NAME = "{ call RMP_MBRBEN_PKG.Prescription_History(?,?,?,?,?)}";
 
 
-    private CallableStatement extractResultSetFor(String storedProcedure, String token) throws SQLException {
+    private CallableStatement extractResultSetFor(Connection connection, String storedProcedure, String token) throws SQLException {
 
-        CallableStatement callableStatement = createCallableStatement(storedProcedure);
+        CallableStatement callableStatement = createCallableStatement(connection, storedProcedure);
 
         callableStatement.setString(1, token);
 
@@ -48,9 +49,9 @@ public class MemberInformationService extends BaseService {
     }
 
 
-    private CallableStatement extractResultSetPrescriptionHistory(String prescriptionHistoryName, String token, int mrbId, int period) throws SQLException {
+    private CallableStatement extractResultSetPrescriptionHistory(Connection connection, String prescriptionHistoryName, String token, int mrbId, int period) throws SQLException {
 
-        CallableStatement callableStatement = createCallableStatement(prescriptionHistoryName);
+        CallableStatement callableStatement = createCallableStatement(connection, prescriptionHistoryName);
 
 
         callableStatement.setInt(1, mrbId);
@@ -73,11 +74,11 @@ public class MemberInformationService extends BaseService {
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
         ResultSet resultSet2 = null;
-
+        Connection connection = null;
 
         try {
-
-            callableStatement = extractResultSetFor(WELCOME_MEMBER_PROCEDURE_NAME, token);
+            connection = super.getConnection();
+            callableStatement = extractResultSetFor(connection, WELCOME_MEMBER_PROCEDURE_NAME, token);
 
 
             resultSet = (ResultSet) callableStatement.getObject(2);
@@ -109,7 +110,7 @@ public class MemberInformationService extends BaseService {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
 
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
         }
         return memberInfoMap;
     }
@@ -119,13 +120,14 @@ public class MemberInformationService extends BaseService {
     public Map<String, String> retrieveMemberAnnualBenefitSumary(String token) throws SQLException {
 
         Map<String, String> memberInfoMap = new HashMap<>();
-
+        Connection connection = null;
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
         ResultSet resultSet2 = null;
 
         try {
-            callableStatement = extractResultSetFor(WELCOME_ANNUAL_BENEFIT_SUMMARY_NAME, token);
+            connection = super.getConnection();
+            callableStatement = extractResultSetFor(connection, WELCOME_ANNUAL_BENEFIT_SUMMARY_NAME, token);
 
             resultSet = (ResultSet) callableStatement.getObject(2);
             resultSet2 = (ResultSet) callableStatement.getObject(3);
@@ -162,7 +164,7 @@ public class MemberInformationService extends BaseService {
         } catch (SQLException e) {
             LOG.error("DATABASE ERROR!!! " + e.getLocalizedMessage(), e);
         } finally {
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
 
         }
 
@@ -173,6 +175,7 @@ public class MemberInformationService extends BaseService {
     public List<Dependent> retrieveMemberDependents(String token) throws SQLException {
 
         List<Dependent> dependents = new ArrayList<>();
+        Connection connection = null;
 
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
@@ -180,7 +183,8 @@ public class MemberInformationService extends BaseService {
 
 
         try {
-            callableStatement = extractResultSetFor(MEMBER_DEPENDENTS_NAME, token);
+            connection = super.getConnection();
+            callableStatement = extractResultSetFor(connection, MEMBER_DEPENDENTS_NAME, token);
 
             resultSet = (ResultSet) callableStatement.getObject(2);
             resultSet2 = (ResultSet) callableStatement.getObject(3);
@@ -212,7 +216,7 @@ public class MemberInformationService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
         }
         return dependents;
     }
@@ -225,9 +229,10 @@ public class MemberInformationService extends BaseService {
         ResultSet resultSet = null;
         ResultSet resultSet2 = null;
 
-
+        Connection connection = null;
         try {
-            callableStatement = extractResultSetPrescriptionHistory(PRESCRIPTION_HISTORY_NAME, token, mrbId, period);
+            connection = super.getConnection();
+            callableStatement = extractResultSetPrescriptionHistory(connection, PRESCRIPTION_HISTORY_NAME, token, mrbId, period);
 
             resultSet = (ResultSet) callableStatement.getObject(4);
             resultSet2 = (ResultSet) callableStatement.getObject(5);
@@ -262,7 +267,7 @@ public class MemberInformationService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, resultSet2);
+            closeResources(callableStatement, resultSet, resultSet2, connection);
         }
 
         return prescriptionHistories;

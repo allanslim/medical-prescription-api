@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -22,8 +23,11 @@ public class EmailValidatorService extends BaseService {
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
 
+        Connection connection = null;
+
         try {
-            callableStatement = createCallableStatement("{ call RMP_USRMGT_PKG.VALIDATE_USER_EMAIL(?,?)}");
+            connection = super.getConnection();
+            callableStatement = createCallableStatement(connection, "{ call RMP_USRMGT_PKG.VALIDATE_USER_EMAIL(?,?)}");
 
             callableStatement.setString(1, email);
             callableStatement.registerOutParameter(2, OracleTypes.CURSOR);
@@ -45,7 +49,7 @@ public class EmailValidatorService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, null);
+            closeResources(callableStatement, resultSet, null, connection);
         }
 
         return false;

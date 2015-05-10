@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -25,9 +26,11 @@ public class UserService extends BaseService {
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
 
-
+        Connection connection = null;
         try {
-            callableStatement = getCallableStatement(email, password);
+            connection = super.getConnection();
+
+            callableStatement = getCallableStatement(connection, email, password);
 
             callableStatement.executeUpdate();
 
@@ -52,14 +55,15 @@ public class UserService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, null);
+
+            closeResources(callableStatement, resultSet, null, connection);
         }
         return StringUtils.EMPTY;
     }
 
-    protected CallableStatement getCallableStatement(String email, String password) throws SQLException {
+    protected CallableStatement getCallableStatement(Connection connection, String email, String password) throws SQLException {
 
-        CallableStatement callableStatement = createCallableStatement(loginUserProcedure);
+        CallableStatement callableStatement = createCallableStatement(connection, loginUserProcedure);
 
         callableStatement.setString(1, email);
         callableStatement.setString(2, password);

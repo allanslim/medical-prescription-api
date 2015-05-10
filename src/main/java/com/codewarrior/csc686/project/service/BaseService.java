@@ -5,6 +5,7 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 
 import javax.sql.DataSource;
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -17,13 +18,18 @@ public class BaseService {
     @Autowired
     protected DataSource datasource;
 
-    protected CallableStatement createCallableStatement(String procedureName) throws SQLException {
+    protected Connection getConnection() throws SQLException {
+        return datasource.getConnection();
+    }
+
+
+    protected CallableStatement createCallableStatement(Connection connection, String procedureName) throws SQLException {
 //        return transactionManager.getDataSource().getConnection().prepareCall(procedureName);
-        return datasource.getConnection().prepareCall(procedureName);
+        return connection.prepareCall(procedureName);
 
     }
 
-    protected void closeResources(CallableStatement callableStatement, ResultSet resultSet, ResultSet resultSet2) throws SQLException {
+    protected void closeResources(CallableStatement callableStatement, ResultSet resultSet, ResultSet resultSet2, Connection connection) throws SQLException {
 
         if (resultSet != null) {
             resultSet.close();
@@ -35,6 +41,10 @@ public class BaseService {
 
         if (callableStatement != null) {
             callableStatement.close();
+        }
+
+        if(connection != null) {
+            connection.close();
         }
     }
 

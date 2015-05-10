@@ -9,10 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.sql.CallableStatement;
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
@@ -54,9 +51,11 @@ public class RegisterUserService extends BaseService {
 
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
+        Connection connection = null;
 
         try {
-            callableStatement = createCallableStatement(REGISTER_USER_STORED_PROCEDURE_NAME);
+            connection = super.getConnection();
+            callableStatement = createCallableStatement(connection, REGISTER_USER_STORED_PROCEDURE_NAME);
 
             callableStatement.setInt(1, registerUserInput.groupId);
             callableStatement.setString(2, registerUserInput.insuranceId);
@@ -92,11 +91,11 @@ public class RegisterUserService extends BaseService {
                 LOG.info("messageName: " + messageName + " description: " + description);
 
                 if (!StringUtils.equals("SUCCESS", messageName)) {
-                    closeResources(callableStatement, resultSet, null);
+                    closeResources(callableStatement, resultSet, null, connection);
                     throw new BadRequestException("400", description);
                 }
 
-                closeResources(callableStatement, resultSet, null);
+                closeResources(callableStatement, resultSet, null, connection);
                 return token;
             }
         } catch (SQLException e) {
@@ -104,7 +103,7 @@ public class RegisterUserService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, null);
+            closeResources(callableStatement, resultSet, null, connection);
         }
 
         return StringUtils.EMPTY;
@@ -125,9 +124,11 @@ public class RegisterUserService extends BaseService {
 
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
+        Connection connection = null;
 
         try {
-            callableStatement = createCallableStatement(VALIDATE_MEMBER_STORED_PROCEDURE_NAME);
+            connection = super.getConnection();
+            callableStatement = createCallableStatement(connection, VALIDATE_MEMBER_STORED_PROCEDURE_NAME);
 
             callableStatement.setInt(1, registerUserInput.groupId);
             callableStatement.setString(2, registerUserInput.insuranceId);
@@ -160,7 +161,7 @@ public class RegisterUserService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, null);
+            closeResources(callableStatement, resultSet, null, connection);
         }
         return false;
     }
@@ -169,10 +170,11 @@ public class RegisterUserService extends BaseService {
 
         CallableStatement callableStatement = null;
         ResultSet resultSet = null;
-
+        Connection connection = null;
 
         try {
-             callableStatement = createCallableStatement(VALIDATE_USEREMAIL_PROCEDURE_NAME);
+            connection = super.getConnection();
+             callableStatement = createCallableStatement(connection, VALIDATE_USEREMAIL_PROCEDURE_NAME);
 
             callableStatement.setString(1, email);
             callableStatement.registerOutParameter(2, OracleTypes.CURSOR);
@@ -199,7 +201,7 @@ public class RegisterUserService extends BaseService {
         } catch (BadRequestException e) {
             LOG.error("BAD REQUEST EXCEPTION", e);
         } finally {
-            closeResources(callableStatement, resultSet, null);
+            closeResources(callableStatement, resultSet, null, connection);
         }
 
         return false;
