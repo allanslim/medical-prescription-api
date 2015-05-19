@@ -58,7 +58,7 @@ public class MrxUserEndpoint {
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/memberCopay/{token}")
-    public List<CopayDetail> retrieveCopay(@PathVariable String token) throws SQLException {
+    public Map<String, CopayDetail> retrieveCopay(@PathVariable String token) throws SQLException {
 
         return memberInformationService.retrieveCopayDetail(token);
 

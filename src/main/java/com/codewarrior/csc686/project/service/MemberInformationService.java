@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class MemberInformationService extends BaseService {
@@ -126,7 +127,7 @@ public class MemberInformationService extends BaseService {
 
 
 
-    public List<CopayDetail> retrieveCopayDetail(String token) throws SQLException {
+    public Map<String, CopayDetail> retrieveCopayDetail(String token) throws SQLException {
 
         List<CopayDetail> copayDetails = new ArrayList<>();
         Connection connection = null;
@@ -168,7 +169,7 @@ public class MemberInformationService extends BaseService {
 
         }
 
-        return copayDetails;
+         return copayDetails.stream().collect(Collectors.toMap( (cpd) -> cpd.serviceType, (cpd2) -> cpd2));
 
     }
 
