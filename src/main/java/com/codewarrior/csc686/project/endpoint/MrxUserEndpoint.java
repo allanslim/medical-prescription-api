@@ -57,6 +57,15 @@ public class MrxUserEndpoint {
         return memberInfoResponse;
     }
 
+    @RequestMapping(method = RequestMethod.GET, value = "/memberCopay/{token}")
+    public List<CopayDetail> retrieveCopay(@PathVariable String token) throws SQLException {
+
+        return memberInformationService.retrieveCopayDetail(token);
+
+
+    }
+
+
     @RequestMapping(method = RequestMethod.GET, value = "/memberDependents/{token}")
     public List<Dependent> retrieveMemberDependents(@PathVariable String token) throws SQLException {
 

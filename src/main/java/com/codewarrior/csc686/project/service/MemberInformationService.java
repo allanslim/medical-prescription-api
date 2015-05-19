@@ -1,6 +1,7 @@
 package com.codewarrior.csc686.project.service;
 
 import com.codewarrior.csc686.project.exception.BadRequestException;
+import com.codewarrior.csc686.project.model.CopayDetail;
 import com.codewarrior.csc686.project.model.Dependent;
 import com.codewarrior.csc686.project.model.PrescriptionHistory;
 import oracle.jdbc.OracleTypes;
@@ -27,6 +28,10 @@ public class MemberInformationService extends BaseService {
     private static String WELCOME_MEMBER_PROCEDURE_NAME = "{ call RMP_MBRBEN_PKG.Welcome_Member(?,?, ?)}";
 
     private static String WELCOME_ANNUAL_BENEFIT_SUMMARY_NAME = "{ call RMP_MBRBEN_PKG.Annual_Benefit_Summary(?,?,?)}";
+
+    private static String MEMBER_COPAY_DETAIL = "{ call RMP_MBRBEN_PKG. Member_Copay_Detail(?,?,?)}";
+
+
 
     private static String MEMBER_DEPENDENTS_NAME = "{ call RMP_MBRBEN_PKG.Member_Dependents(?,?,?)}";
 
@@ -113,6 +118,58 @@ public class MemberInformationService extends BaseService {
             closeResources(callableStatement, resultSet, resultSet2, connection);
         }
         return memberInfoMap;
+    }
+
+
+
+
+
+
+
+    public List<CopayDetail> retrieveCopayDetail(String token) throws SQLException {
+
+        List<CopayDetail> copayDetails = new ArrayList<>();
+        Connection connection = null;
+        CallableStatement callableStatement = null;
+        ResultSet resultSet = null;
+        ResultSet resultSet2 = null;
+
+        try {
+            connection = super.getConnection();
+            callableStatement = extractResultSetFor(connection, MEMBER_COPAY_DETAIL, token);
+
+            resultSet = (ResultSet) callableStatement.getObject(2);
+            resultSet2 = (ResultSet) callableStatement.getObject(3);
+
+            while (resultSet.next()) {
+                String messageName = resultSet.getString("MSG_NAME");
+                String description = resultSet.getString("MSG_DESCR");
+
+                LOG.info("messageName: " + messageName + " description: " + description);
+
+                if (!StringUtils.equals("SUCCESS", messageName)) {
+                    throw new BadRequestException("400", description);
+                }
+
+
+                while (resultSet2.next()) {
+
+                    copayDetails.add(new CopayDetail( resultSet2.getString("SERVICE_TYPE"),
+                            resultSet2.getString("COPAY_GEN_FORM"),
+                            resultSet2.getString("COPAY_GEN_NFORM"),
+                            resultSet2.getString("COPAY_BRAND_FORM"),
+                            resultSet2.getString("COPAY_BRAND_NFORM")));
+                }
+            }
+        } catch (SQLException e) {
+            LOG.error("DATABASE ERROR!!! " + e.getLocalizedMessage(), e);
+        } finally {
+            closeResources(callableStatement, resultSet, resultSet2, connection);
+
+        }
+
+        return copayDetails;
+
     }
 
 
@@ -272,5 +329,6 @@ public class MemberInformationService extends BaseService {
 
         return prescriptionHistories;
     }
+
 
 }
